@@ -1,10 +1,71 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#3157D5"><title>Uang Manager</title><link rel="manifest" href="manifest.json"><style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#f5f7fb;color:#20242b}.app{max-width:520px;margin:auto;padding:22px 18px 40px}h1{margin:4px 0 5px;font-size:29px}.sub,.small{color:#68707d}.card{border-radius:18px;padding:18px;margin:12px 0}.makan{background:#e8f5e9}.jajan{background:#fff3e0}.kuliah{background:#e8eaf6}.name{font-weight:700;font-size:18px}.balance{font-size:25px;font-weight:700;margin:10px 0 14px}button{border:0;border-radius:12px;padding:12px 15px;font-weight:700;background:#3157d5;color:white}.secondary{background:white;color:#3157d5;border:1px solid #dbe1ee}.total{background:#ede7f6;border-radius:18px;padding:20px;margin-top:15px}.total b{font-size:25px}.actions{display:flex;gap:10px;margin:16px 0}.actions button{flex:1}.history{margin-top:24px}.tx{background:white;border-radius:14px;padding:13px;margin:8px 0;display:flex;justify-content:space-between}input,select{width:100%;padding:13px;margin:7px 0 13px;border:1px solid #d5dbe6;border-radius:10px;font-size:16px}.modal{display:none;position:fixed;inset:0;background:#0008;align-items:flex-end;justify-content:center}.sheet{background:white;width:min(520px,100%);border-radius:22px 22px 0 0;padding:22px}</style></head><body><div class="app"><h1>Uang Manager</h1><div class="sub">Kelola uang makan, jajan, dan kuliah.</div><div id="cards"></div><div class="total">TOTAL SALDO<br><b id="total">Rp0</b></div><div class="actions"><button onclick="openModal('expense')">+ Pengeluaran</button><button class="secondary" onclick="openModal('income')">+ Tambah Uang</button></div><button class="secondary" style="width:100%" onclick="resetData()">Atur Ulang Semua Saldo</button><div class="history"><h2>Riwayat Transaksi</h2><div id="history"></div></div></div>
-<div class="modal" id="modal"><div class="sheet"><h2 id="modalTitle"></h2><label>Kategori</label><select id="cat"><option value="makan">Uang Makan</option><option value="jajan">Uang Jajan</option><option value="kuliah">Uang Kuliah</option></select><label>Nominal (Rp)</label><input id="amount" type="number" min="1" placeholder="Contoh: 25000"><label>Keterangan</label><input id="note" placeholder="Contoh: makan siang"><div class="actions"><button onclick="saveTx()">Simpan</button><button class="secondary" onclick="closeModal()">Batal</button></div></div></div>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#176b55">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<title>Uang Manager</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#17211e;background:#f4f6f8;--g:#176b55;--line:#e4eae6}
+*{box-sizing:border-box}body{margin:0}header{background:var(--g);color:white;padding:22px 17px;border-radius:0 0 22px 22px}
+h1{font-size:23px;margin:0}.muted{opacity:.8;font-size:13px}.total{margin-top:18px;font-size:13px}.total strong{display:block;font-size:29px;margin-top:4px}
+main{max-width:720px;margin:auto;padding:16px}.head{display:flex;justify-content:space-between;align-items:center;margin:8px 0 12px}h2{font-size:18px;margin:0}
+button{border:0;border-radius:10px;padding:11px 13px;font-weight:650;font-size:14px;cursor:pointer}.primary{background:var(--g);color:white}.soft{background:#e8f4ef;color:var(--g)}.red{background:#fff0ee;color:#b83226}.plain{background:#edf0ef;color:#29332f}
+.card,.history{background:white;border:1px solid var(--line);border-radius:15px;margin-bottom:11px;padding:14px}.cathead{display:flex;justify-content:space-between;align-items:center}.catname{font-weight:750}.balance{font-size:22px;font-weight:750;margin:9px 0 12px}.actions{display:flex;gap:8px}.actions button{flex:1}
+.tx{padding:13px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}.tx:last-child{border:0}.txname{font-weight:650}.sub{font-size:12px;color:#68746e;margin-top:3px}.amount{font-weight:750;white-space:nowrap}.income{color:var(--g)}.expense{color:#b83226}.txactions{display:flex;gap:5px;margin-top:7px}.txactions button{font-size:12px;padding:6px 9px}
+.empty{text-align:center;color:#68746e;padding:20px;font-size:14px}.modal{display:none;position:fixed;inset:0;background:#0007;align-items:center;justify-content:center;padding:15px;z-index:5}.dialog{background:white;border-radius:17px;padding:18px;width:min(100%,430px);max-height:90vh;overflow:auto}.dialog h3{margin:0 0 14px}.field{margin:11px 0}.field label{display:block;font-size:13px;font-weight:650;margin-bottom:5px}.field input,.field select{width:100%;padding:12px;border:1px solid #cbd5cf;border-radius:9px;font-size:16px}.dlgactions{display:flex;gap:8px;margin-top:16px}.dlgactions button{flex:1}.note{font-size:12px;color:#68746e;line-height:1.5}footer{text-align:center;color:#68746e;font-size:11px;padding:18px}
+</style>
+</head>
+<body>
+<header><h1>Uang Manager</h1><div class="muted">Atur uangmu dengan lebih terencana</div><div class="total">TOTAL SELURUH SALDO<strong id="total">Rp0</strong></div></header>
+<main>
+<div class="head"><h2>Kategori uang</h2><button class="primary" id="addCat">+ Kategori</button></div>
+<div id="categories"></div>
+<div class="head" style="margin-top:24px"><h2>Riwayat transaksi</h2></div>
+<div class="history" id="history"></div>
+<p class="note">Data tersimpan di perangkat ini. Data tidak otomatis tersinkron ke perangkat lain. Jangan hapus data situs/browser jika ingin mempertahankan catatan.</p>
+</main><footer>Uang Manager • Penyimpanan lokal</footer>
+<div class="modal" id="modal"><div class="dialog"><h3 id="modalTitle"></h3><div id="modalBody"></div><div class="dlgactions"><button class="plain" id="cancel">Batal</button><button class="primary" id="save">Simpan</button></div></div></div>
 <script>
-const KEY='uang-manager-v1';let data=JSON.parse(localStorage.getItem(KEY)||'null')||{makan:0,jajan:0,kuliah:0,history:[]};const names={makan:'Uang Makan',jajan:'Uang Jajan',kuliah:'Uang Kuliah'},cls={makan:'makan',jajan:'jajan',kuliah:'kuliah'};let mode='expense';const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
-function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}function render(){let c=document.getElementById('cards');c.innerHTML='';['makan','jajan','kuliah'].forEach(k=>c.innerHTML+=`<div class="card ${cls[k]}"><div class="name">${names[k]}</div><div class="balance">${rupiah(data[k])}</div><button onclick="quickExpense('${k}')">Kurangi uang ini</button></div>`);document.getElementById('total').textContent=rupiah(data.makan+data.jajan+data.kuliah);let h=document.getElementById('history');h.innerHTML=data.history.length?data.history.slice().reverse().map(x=>`<div class="tx"><div><b>${names[x.cat]}</b><div class="small">${x.note||'Tanpa keterangan'} · ${x.date}</div></div><b style="color:${x.type==='expense'?'#c62828':'#2e7d32'}">${x.type==='expense'?'-':'+'}${rupiah(x.amount)}</b></div>`).join(''):'<div class="small">Belum ada transaksi.</div>'}
-function openModal(m){mode=m;document.getElementById('modalTitle').textContent=m==='expense'?'Tambah Pengeluaran':'Tambah Uang';document.getElementById('amount').value='';document.getElementById('note').value='';document.getElementById('modal').style.display='flex'}function closeModal(){document.getElementById('modal').style.display='none'}function quickExpense(k){openModal('expense');document.getElementById('cat').value=k}
-function saveTx(){let k=document.getElementById('cat').value,a=Number(document.getElementById('amount').value),note=document.getElementById('note').value.trim();if(!a||a<1)return alert('Masukkan nominal yang valid.');if(mode==='expense'&&a>data[k])return alert('Saldo kategori ini tidak cukup.');data[k]+=mode==='expense'?-a:a;data.history.push({cat:k,amount:a,note,date:new Date().toLocaleString('id-ID'),type:mode});save();closeModal()}
-function resetData(){if(!confirm('Semua saldo dan riwayat akan dihapus. Lanjutkan?'))return;let m=prompt('Saldo awal Uang Makan (Rp):','0');if(m===null)return;let j=prompt('Saldo awal Uang Jajan (Rp):','0');if(j===null)return;let k=prompt('Saldo awal Uang Kuliah (Rp):','0');if(k===null)return;data={makan:Number(m)||0,jajan:Number(j)||0,kuliah:Number(k)||0,history:[]};save()}render();
-</script></body></html>
+const KEY='uang-manager-v4';
+const starter={categories:[{id:'makan',name:'Uang Makan',initial:0},{id:'jajan',name:'Uang Jajan',initial:0},{id:'kuliah',name:'Uang Kuliah',initial:0}],transactions:[]};
+let data;try{data=JSON.parse(localStorage.getItem(KEY))||starter}catch(e){data=starter}
+if(!Array.isArray(data.categories)||!Array.isArray(data.transactions))data=starter;
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function balance(id){let c=data.categories.find(x=>x.id===id);return c?Number(c.initial||0)+data.transactions.filter(t=>t.categoryId===id).reduce((s,t)=>s+(t.type==='income'?1:-1)*Number(t.amount),0):0}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function render(){
+ $('total').textContent=money(data.categories.reduce((s,c)=>s+balance(c.id),0));
+ $('categories').innerHTML='';
+ if(!data.categories.length)$('categories').innerHTML='<div class="empty">Belum ada kategori. Tambahkan kategori baru.</div>';
+ data.categories.forEach(c=>{let el=document.createElement('section');el.className='card';el.innerHTML=`<div class="cathead"><span class="catname">${esc(c.name)}</span><button class="plain" data-cat-edit="${c.id}">Atur</button></div><div class="balance">${money(balance(c.id))}</div><div class="actions"><button class="soft" data-new="income" data-cat="${c.id}">+ Pemasukan</button><button class="red" data-new="expense" data-cat="${c.id}">− Pengeluaran</button></div>`;$('categories').append(el)});
+ const txs=[...data.transactions].sort((a,b)=>b.createdAt-a.createdAt);$('history').innerHTML=txs.length?'':'<div class="empty">Belum ada transaksi.</div>';
+ txs.forEach(t=>{let c=data.categories.find(x=>x.id===t.categoryId);let el=document.createElement('div');el.className='tx';el.innerHTML=`<div><div class="txname">${esc(t.note)}</div><div class="sub">${esc(c?.name||'Kategori')} · ${esc(t.date)}</div><div class="txactions"><button class="plain" data-tx-edit="${t.id}">Edit</button><button class="red" data-tx-del="${t.id}">Hapus</button></div></div><div class="amount ${t.type}">${t.type==='income'?'+':'−'} ${money(t.amount)}</div>`;$('history').append(el)});
+}
+function openModal(title,body,fn){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').style.display='flex';$('save').onclick=()=>{if(fn()!==false)$('modal').style.display='none'}}
+$('cancel').onclick=()=>$('modal').style.display='none';
+$('addCat').onclick=()=>openModal('Tambah kategori',`<div class="field"><label>Nama kategori</label><input id="name" maxlength="45" placeholder="Contoh: Uang Transportasi"></div><div class="field"><label>Saldo awal (Rp)</label><input id="initial" type="number" min="0" step="1" placeholder="0"></div>`,()=>{let name=$('name').value.trim(),initial=Number($('initial').value||0);if(!name||initial<0){alert('Isi nama dan saldo awal yang valid.');return false}data.categories.push({id:uid(),name,initial});save()});
+document.addEventListener('click',e=>{let b=e.target.closest('button');if(!b)return;if(b.dataset.new)txForm(null,b.dataset.cat,b.dataset.new);if(b.dataset.txEdit){let t=data.transactions.find(x=>x.id===b.dataset.txEdit);if(t)txForm(t,t.categoryId,t.type)}if(b.dataset.txDel&&confirm('Hapus transaksi ini? Saldo akan dihitung ulang.')){data.transactions=data.transactions.filter(x=>x.id!==b.dataset.txDel);save()}if(b.dataset.catEdit)catForm(b.dataset.catEdit)});
+function txForm(old,catId,type){
+ let opts=data.categories.map(c=>`<option value="${c.id}" ${c.id===catId?'selected':''}>${esc(c.name)}</option>`).join('');
+ openModal(old?'Edit transaksi':'Transaksi baru',`<div class="field"><label>Kategori</label><select id="txCat">${opts}</select></div><div class="field"><label>Jenis transaksi</label><select id="txType"><option value="income" ${type==='income'?'selected':''}>Pemasukan</option><option value="expense" ${type==='expense'?'selected':''}>Pengeluaran</option></select></div><div class="field"><label>Nominal (Rp)</label><input id="amount" type="number" min="1" step="1" value="${old?Number(old.amount):''}"></div><div class="field"><label>Keterangan</label><input id="note" maxlength="100" value="${old?esc(old.note):''}" placeholder="Contoh: Makan siang"></div><div class="field"><label>Tanggal</label><input id="date" type="date" value="${old?old.dateISO:new Date().toISOString().slice(0,10)}"></div>`,()=>{
+ let categoryId=$('txCat').value,kind=$('txType').value,amount=Number($('amount').value),note=$('note').value.trim(),dateISO=$('date').value;
+ if(!categoryId||!Number.isFinite(amount)||amount<=0||!note||!dateISO){alert('Lengkapi semua data dengan benar.');return false}
+ if(old)data.transactions=data.transactions.filter(t=>t.id!==old.id);
+ let available=balance(categoryId);
+ if(kind==='expense'&&amount>available){if(old)data.transactions.push(old);alert('Saldo kategori tidak mencukupi.');render();return false}
+ let date=new Date(dateISO+'T12:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+ data.transactions.push({id:old?old.id:uid(),categoryId,type:kind,amount,note,date,dateISO,createdAt:old?old.createdAt:Date.now()});save()
+ });
+}
+function catForm(id){let c=data.categories.find(x=>x.id===id);if(!c)return;openModal('Atur kategori',`<div class="field"><label>Nama kategori</label><input id="name" maxlength="45" value="${esc(c.name)}"></div><div class="field"><label>Saldo awal (Rp)</label><input id="initial" type="number" min="0" step="1" value="${Number(c.initial)}"></div><p class="note">Perubahan saldo awal akan menghitung ulang saldo kategori. Riwayat transaksi tetap tersimpan.</p>`,()=>{let name=$('name').value.trim(),initial=Number($('initial').value);if(!name||!Number.isFinite(initial)||initial<0){alert('Data kategori tidak valid.');return false}c.name=name;c.initial=initial;save()})}
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+let installPrompt;addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;let b=document.createElement('button');b.textContent='Install aplikasi';b.className='primary';b.style.position='fixed';b.style.bottom='15px';b.style.right='15px';b.onclick=async()=>{installPrompt.prompt();await installPrompt.userChoice;b.remove();installPrompt=null};document.body.append(b)});
+render();
+</script>
+</body></html>
